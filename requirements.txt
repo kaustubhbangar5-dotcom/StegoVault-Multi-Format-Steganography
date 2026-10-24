@@ -1,0 +1,17 @@
+# StegoVault: Multi-Format Steganography and Secure Data Concealment System
+# Core Backend & Web Framework
+Flask>=3.0.0
+Werkzeug>=3.0.0
+
+# Cryptography & Security
+cryptography>=42.0.0
+
+# Carrier Processing Libraries
+Pillow>=10.0.0
+numpy>=1.24.0
+soundfile>=0.12.1
+pypdf>=4.0.0
+qrcode[pil]>=7.4.2
+
+# Testing & Quality Assurance
+pytest>=8.0.0

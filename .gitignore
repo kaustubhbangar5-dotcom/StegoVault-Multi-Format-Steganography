@@ -1,0 +1,24 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Pytest & Coverage
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Environments
+venv/
+env/
+ENV/
+.venv/
+
+# Operating System Files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# StegoVault temporary generated outputs (keep directory structure via .gitkeep)
+outputs/*
+!outputs/.gitkeep

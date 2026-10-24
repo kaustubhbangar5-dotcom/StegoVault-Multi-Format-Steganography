@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Extract & Decrypt | StegoVault</title>
+  <meta name="description" content="Universal extraction terminal for Image, Audio, PDF, and QR Code steganographic carriers.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔐</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+
+  <!-- Navigation Bar -->
+  <nav class="navbar" id="main-nav">
+    <a href="/" class="brand-container" id="brand-link">
+      <div class="brand-icon">🔐</div>
+      <div>
+        <div class="brand-title">StegoVault</div>
+      </div>
+      <span class="brand-badge">Universal Decryption Terminal</span>
+    </a>
+
+    <ul class="nav-links">
+      <li><a href="/" class="nav-link" id="nav-dashboard">Dashboard</a></li>
+      <li><a href="/encode" class="nav-link" id="nav-encode">Conceal Data</a></li>
+      <li><a href="/decode" class="nav-link active" id="nav-decode">Extract & Decrypt</a></li>
+    </ul>
+  </nav>
+
+  <!-- Main Content -->
+  <main class="main-content">
+    <div class="panel-container">
+
+      <!-- Error Alert -->
+      {% if error %}
+      <div class="alert alert-danger" id="alert-error">
+        <span>❌</span>
+        <div>
+          <strong>Extraction / Decryption Failed:</strong> {{ error }}
+          <div style="font-size: 0.85rem; color: #fda4af; margin-top: 0.25rem;">
+            Tip: Verify that the passphrase is correct and the carrier was not recompressed with lossy encoding (e.g. converted to MP3 or JPEG).
+          </div>
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- Success Result Panel -->
+      {% if success and result %}
+      <div class="glass-panel" id="result-success-panel" style="border-color: rgba(16, 185, 129, 0.4);">
+        <div class="panel-header" style="border-color: rgba(16, 185, 129, 0.3);">
+          <div>
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+              <span style="font-size: 1.5rem;">🔓</span>
+              <h2 class="panel-title" style="color: var(--accent-emerald);">Payload Recovered &amp; Authenticated</h2>
+            </div>
+            <p class="panel-subtitle">
+              Carrier Format: <strong style="color: var(--accent-cyan);">{{ result.carrier_format }}</strong> • Authenticated AES-256-GCM Tag Verified.
+            </p>
+          </div>
+          <div>
+            <button class="btn btn-secondary btn-sm" id="btn-copy-secret" onclick="copySecretToClipboard()">
+              <span id="copy-icon">📋</span> <span id="copy-text">Copy Secret</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Decrypted Plaintext Secret Box -->
+        <div>
+          <label class="form-label" style="color: var(--accent-cyan); font-weight: 700;">
+            <span>Decrypted Secret Message</span>
+            <span class="hint">{{ result.secret_length }} characters ({{ result.payload_bytes }}B encrypted payload)</span>
+          </label>
+          <div class="secret-display" id="decrypted-secret-text">{{ result.secret_message }}</div>
+        </div>
+
+        <!-- Security Verification Checklist -->
+        <div style="margin-top: 1.5rem;">
+          <label class="form-label"><span>Security Verification Audit</span></label>
+          <div class="verification-list">
+            <div class="verification-item verified">
+              <span class="verification-icon">🛡️</span>
+              <span>AES-256-GCM Auth Tag Verified</span>
+            </div>
+            <div class="verification-item verified">
+              <span class="verification-icon">🔑</span>
+              <span>Scrypt Key KDF Authenticated</span>
+            </div>
+            <div class="verification-item verified">
+              <span class="verification-icon">🔍</span>
+              <span>Payload Bitstream Integrity 100%</span>
+            </div>
+            <div class="verification-item verified">
+              <span class="verification-icon">✨</span>
+              <span>Carrier Signature Confirmed</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Cryptographic Envelope Drawer -->
+        {% if result.audit %}
+        <div style="margin-top: 1.5rem; background: rgba(0, 0, 0, 0.35); padding: 1.25rem; border-radius: 10px; border: 1px solid var(--border-subtle);">
+          <div style="font-size: 0.85rem; font-weight: 700; color: var(--accent-cyan); margin-bottom: 0.75rem;">
+            CRYPTOGRAPHIC ENVELOPE AUDIT
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0.75rem; font-family: var(--font-mono); font-size: 0.8rem;">
+            <div>
+              <div style="color: var(--text-faint);">SALT (16B):</div>
+              <div style="color: #fff; word-break: break-all;">{{ result.audit.salt_hex }}</div>
+            </div>
+            <div>
+              <div style="color: var(--text-faint);">NONCE (12B):</div>
+              <div style="color: #fff; word-break: break-all;">{{ result.audit.nonce_hex }}</div>
+            </div>
+            <div>
+              <div style="color: var(--text-faint);">AUTH TAG (16B):</div>
+              <div style="color: var(--accent-emerald); word-break: break-all;">{{ result.audit.auth_tag_hex }}</div>
+            </div>
+          </div>
+        </div>
+        {% endif %}
+
+      </div>
+      {% endif %}
+
+      <!-- Decoding Input Form -->
+      <div class="glass-panel" id="decode-panel">
+        <div class="panel-header">
+          <div>
+            <h1 class="panel-title"><span>🔓</span> Universal Extraction Terminal</h1>
+            <p class="panel-subtitle">Upload any StegoVault carrier (Image, Audio, PDF, or QR Code) and enter the passphrase.</p>
+          </div>
+        </div>
+
+        <form action="/decode" method="POST" enctype="multipart/form-data" id="decode-form">
+
+          <!-- Optional Carrier Type Filter -->
+          <div class="form-group">
+            <label class="form-label" for="carrier_type">
+              <span>Carrier Type</span>
+              <span class="hint">Auto-detection recognizes format automatically</span>
+            </label>
+            <select name="carrier_type" id="carrier_type" class="form-input">
+              <option value="auto" selected>✨ Auto-Detect (Image / Audio / PDF / QR)</option>
+              <option value="image">🖼️ Image (LSB PNG/BMP)</option>
+              <option value="audio">🎵 Audio Waveform (WAV/FLAC)</option>
+              <option value="pdf">📄 PDF Document</option>
+              <option value="qr">📱 Secure QR Code</option>
+            </select>
+          </div>
+
+          <!-- Upload Carrier Dropzone -->
+          <div class="form-group">
+            <label class="form-label">
+              <span>Steganographic Carrier File</span>
+              <span class="hint">Accepts PNG, JPG, BMP, WAV, FLAC, PDF</span>
+            </label>
+
+            <div class="upload-dropzone" id="dropzone" onclick="document.getElementById('stego_file').click();">
+              <div class="dropzone-icon">📥</div>
+              <div class="dropzone-title">Click to upload or drag stego carrier here</div>
+              <div class="dropzone-subtitle">Drop your Image, Audio (.wav), PDF, or QR Code file</div>
+            </div>
+
+            <input type="file" id="stego_file" name="stego_file" class="file-input-hidden" accept="image/png, image/jpeg, image/bmp, audio/wav, audio/flac, application/pdf" required>
+
+            <!-- File Preview Card -->
+            <div class="preview-card" id="preview-card">
+              <div id="preview-icon" style="font-size: 2rem;">📁</div>
+              <img id="image-preview" class="preview-thumbnail" alt="Preview" style="display: none;">
+              <div class="preview-details">
+                <div class="preview-name" id="preview-filename">stego_file</div>
+                <div class="preview-meta" id="preview-meta">Ready to extract</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Secret Passphrase -->
+          <div class="form-group">
+            <label class="form-label" for="password">
+              <span>Decryption Passphrase</span>
+              <span class="hint">Required for AES-256-GCM authentication</span>
+            </label>
+            <div class="password-wrapper">
+              <input type="password" id="password" name="password" class="form-input" placeholder="Enter secret key passphrase used during concealment..." required autocomplete="off">
+              <button type="button" class="password-toggle" id="toggle-password" title="Show/Hide Passphrase">👁️</button>
+            </div>
+          </div>
+
+          <!-- Action Button -->
+          <button type="submit" class="btn btn-purple" id="btn-submit-decode" style="width: 100%; padding: 1rem;">
+            <span>⚡</span> Extract & Decrypt Carrier
+          </button>
+        </form>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="footer-container">
+      <div class="footer-brand">
+        <div class="footer-title"><strong>StegoVault</strong></div>
+        <div class="footer-subtitle"><em>Multi-Format Steganography &amp; Secure Data Concealment System</em></div>
+        <div class="footer-tagline">Secure Communication • Hidden Information • Protected Data</div>
+      </div>
+
+      <div class="footer-nav-col">
+        <div class="footer-heading">NAVIGATION</div>
+        <div class="footer-links">
+          <a href="/" class="footer-link">Dashboard</a>
+          <span class="footer-sep">·</span>
+          <a href="/decode" class="footer-link">Extraction Terminal</a>
+        </div>
+      </div>
+
+      <div class="footer-credits">
+        <div class="footer-heading">DEVELOPED BY</div>
+        <div class="footer-author">Kaustubh Ashish Bangar</div>
+        <div class="footer-project-tag">Cybersecurity Project</div>
+      </div>
+    </div>
+
+    <div class="footer-bottom">
+      <div class="footer-copy">&copy; 2026 StegoVault. All Rights Reserved.</div>
+      <div class="footer-disclaimer">Designed for secure, authorized data concealment and recovery.</div>
+    </div>
+  </footer>
+
+  <script>
+    const fileInput = document.getElementById('stego_file');
+    const dropzone = document.getElementById('dropzone');
+    const previewCard = document.getElementById('preview-card');
+    const previewImg = document.getElementById('image-preview');
+    const previewIcon = document.getElementById('preview-icon');
+    const previewFilename = document.getElementById('preview-filename');
+    const previewMeta = document.getElementById('preview-meta');
+    const togglePassword = document.getElementById('toggle-password');
+    const passwordInput = document.getElementById('password');
+
+    ['dragenter', 'dragover'].forEach(name => {
+      dropzone.addEventListener(name, (e) => {
+        e.preventDefault();
+        dropzone.classList.add('dragover');
+      });
+    });
+
+    ['dragleave', 'drop'].forEach(name => {
+      dropzone.addEventListener(name, (e) => {
+        e.preventDefault();
+        dropzone.classList.remove('dragover');
+      });
+    });
+
+    dropzone.addEventListener('drop', (e) => {
+      if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+        fileInput.files = e.dataTransfer.files;
+        handleFileSelect(e.dataTransfer.files[0]);
+      }
+    });
+
+    fileInput.addEventListener('change', () => {
+      if (fileInput.files && fileInput.files[0]) {
+        handleFileSelect(fileInput.files[0]);
+      }
+    });
+
+    function handleFileSelect(file) {
+      previewFilename.innerText = file.name;
+      previewCard.style.display = 'flex';
+      const ext = file.name.split('.').pop().toLowerCase();
+
+      if (['png', 'jpg', 'jpeg', 'bmp'].includes(ext)) {
+        previewIcon.style.display = 'none';
+        previewImg.style.display = 'block';
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          previewImg.src = e.target.result;
+          previewMeta.innerText = `Image / QR Carrier • ${(file.size / 1024).toFixed(1)} KB`;
+        };
+        reader.readAsDataURL(file);
+      } else if (['wav', 'flac'].includes(ext)) {
+        previewImg.style.display = 'none';
+        previewIcon.style.display = 'block';
+        previewIcon.innerText = '🎵';
+        previewMeta.innerText = `Audio Waveform Carrier • ${(file.size / 1024).toFixed(1)} KB`;
+      } else if (ext === 'pdf') {
+        previewImg.style.display = 'none';
+        previewIcon.style.display = 'block';
+        previewIcon.innerText = '📄';
+        previewMeta.innerText = `PDF Document Carrier • ${(file.size / 1024).toFixed(1)} KB`;
+      } else {
+        previewImg.style.display = 'none';
+        previewIcon.style.display = 'block';
+        previewIcon.innerText = '📁';
+        previewMeta.innerText = `${(file.size / 1024).toFixed(1)} KB`;
+      }
+    }
+
+    togglePassword.addEventListener('click', () => {
+      const isPass = passwordInput.getAttribute('type') === 'password';
+      passwordInput.setAttribute('type', isPass ? 'text' : 'password');
+      togglePassword.innerText = isPass ? '🔒' : '👁️';
+    });
+
+    function copySecretToClipboard() {
+      const secretText = document.getElementById('decrypted-secret-text').innerText;
+      navigator.clipboard.writeText(secretText).then(() => {
+        const copyText = document.getElementById('copy-text');
+        const copyIcon = document.getElementById('copy-icon');
+        copyText.innerText = 'Copied!';
+        copyIcon.innerText = '✅';
+        setTimeout(() => {
+          copyText.innerText = 'Copy Secret';
+          copyIcon.innerText = '📋';
+        }, 2000);
+      });
+    }
+  </script>
+</body>
+</html>

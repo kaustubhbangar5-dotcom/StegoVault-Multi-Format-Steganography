@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>StegoVault | Multi-Format Steganography & Secure Concealment</title>
+  <meta name="description" content="StegoVault: Conceal confidential information inside Images, Audio Waveforms, PDFs, and QR Codes using AES-256-GCM encryption and steganography.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔐</text></svg>">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+
+  <!-- Navigation Bar -->
+  <nav class="navbar" id="main-nav">
+    <a href="/" class="brand-container" id="brand-link">
+      <div class="brand-icon">🔐</div>
+      <div>
+        <div class="brand-title">StegoVault</div>
+      </div>
+      <span class="brand-badge">v2.0 • Multi-Carrier Active</span>
+    </a>
+
+    <ul class="nav-links">
+      <li><a href="/" class="nav-link active" id="nav-dashboard">Dashboard</a></li>
+      <li><a href="/encode" class="nav-link" id="nav-encode">Conceal Data</a></li>
+      <li><a href="/decode" class="nav-link" id="nav-decode">Extract & Decrypt</a></li>
+    </ul>
+  </nav>
+
+  <!-- Main Content -->
+  <main class="main-content">
+    
+    <!-- Hero Section -->
+    <section class="hero" id="hero-section">
+      <div class="hero-tagline">
+        <span>🛡️</span> Hide the Signal. Protect the Secret.
+      </div>
+      <h1 class="hero-title">
+        Multi-Format Steganography &<br>
+        <span>Secure Data Concealment</span>
+      </h1>
+      <p class="hero-desc">
+        StegoVault unites authenticated AES-256-GCM encryption with multi-carrier steganography across <strong>Images</strong>, <strong>Audio Waveforms</strong>, <strong>PDF Documents</strong>, and <strong>Secure QR Codes</strong>. Conceal confidential communications with zero perceptual degradation and hardware-hardened Scrypt key derivation.
+      </p>
+
+      <div class="hero-actions">
+        <a href="/encode" class="btn btn-primary" id="hero-btn-encode">
+          <span>🔒</span> Conceal Data in Carrier
+        </a>
+        <a href="/decode" class="btn btn-secondary" id="hero-btn-decode">
+          <span>🔓</span> Universal Extract Terminal
+        </a>
+      </div>
+    </section>
+
+    <!-- Core Carrier Architecture Cards -->
+    <section class="grid-features" id="features-section">
+      <div class="feature-card">
+        <div class="card-icon">🖼️</div>
+        <h3 class="card-title">Image Steganography</h3>
+        <p class="card-desc">
+          LSB spatial substitution across RGB pixel channels with protocol framing (<code>STEGO1</code>). Preserves photographic visual fidelity with zero perceptual distortion.
+        </p>
+      </div>
+
+      <div class="feature-card">
+        <div class="card-icon">🎵</div>
+        <h3 class="card-title">Audio Steganography</h3>
+        <p class="card-desc">
+          16-bit PCM waveform sample LSB concealment (<code>STEGA1</code>). Inaudible acoustic payload embedding with SNR &gt; 90 dB for lossless WAV and FLAC carriers.
+        </p>
+      </div>
+
+      <div class="feature-card">
+        <div class="card-icon">📄</div>
+        <h3 class="card-title">PDF Concealment</h3>
+        <p class="card-desc">
+          Dual-layer PDF concealment utilizing private document catalog metadata dictionaries and authenticated embedded attachment streams (up to 10 MB).
+        </p>
+      </div>
+
+      <div class="feature-card">
+        <div class="card-icon">📱</div>
+        <h3 class="card-title">QR Code Security</h3>
+        <p class="card-desc">
+          Zero-carrier high-density QR matrix generation paired with computer vision scanning (OpenCV) for rapid visual air-gapped cryptographic payload transfer.
+        </p>
+      </div>
+    </section>
+
+    <!-- Interactive Capacity Calculator Widget -->
+    <section style="margin-top: 3.5rem;">
+      <div class="glass-panel" id="capacity-calculator-panel">
+        <div class="panel-header">
+          <div>
+            <h2 class="panel-title"><span>⚡</span> Carrier Capacity Calculator</h2>
+            <p class="panel-subtitle">Estimate how many secret characters can fit inside your digital carrier</p>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; align-items: end;">
+          <div class="form-group" style="margin-bottom: 0;">
+            <label class="form-label" for="calc-carrier-type">Carrier Format</label>
+            <select id="calc-carrier-type" class="form-input" onchange="toggleCalcInputs()">
+              <option value="image" selected>🖼️ Image (Resolution)</option>
+              <option value="audio">🎵 Audio Waveform (Duration)</option>
+            </select>
+          </div>
+          <div class="form-group" id="group-width" style="margin-bottom: 0;">
+            <label class="form-label" for="calc-width">Width (Pixels)</label>
+            <input type="number" id="calc-width" class="form-input" value="1920" min="10" max="10000">
+          </div>
+          <div class="form-group" id="group-height" style="margin-bottom: 0;">
+            <label class="form-label" for="calc-height">Height (Pixels)</label>
+            <input type="number" id="calc-height" class="form-input" value="1080" min="10" max="10000">
+          </div>
+          <div class="form-group" id="group-duration" style="margin-bottom: 0; display: none;">
+            <label class="form-label" for="calc-duration">Duration (Seconds, 44.1kHz Stereo)</label>
+            <input type="number" id="calc-duration" class="form-input" value="60" min="1" max="3600">
+          </div>
+          <div class="form-group" style="margin-bottom: 0;">
+            <button class="btn btn-secondary" id="btn-calc" style="width: 100%;">Calculate Capacity</button>
+          </div>
+        </div>
+
+        <div id="calc-result" style="margin-top: 1.5rem; padding: 1.25rem; background: var(--bg-secondary); border-radius: 12px; border: 1px solid var(--border-subtle); display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; text-align: center;">
+          <div>
+            <div style="color: var(--text-faint); font-size: 0.8rem; text-transform: uppercase;">Total Elements</div>
+            <div id="calc-pixels" style="font-size: 1.3rem; font-weight: 700; color: #fff;">2,073,600 px</div>
+          </div>
+          <div>
+            <div style="color: var(--text-faint); font-size: 0.8rem; text-transform: uppercase;">Available Bits</div>
+            <div id="calc-bits" style="font-size: 1.3rem; font-weight: 700; color: var(--accent-cyan);">6,220,800</div>
+          </div>
+          <div>
+            <div style="color: var(--text-faint); font-size: 0.8rem; text-transform: uppercase;">Max Payload (Bytes)</div>
+            <div id="calc-bytes" style="font-size: 1.3rem; font-weight: 700; color: var(--accent-emerald);">777,590 B (~759 KB)</div>
+          </div>
+          <div>
+            <div style="color: var(--text-faint); font-size: 0.8rem; text-transform: uppercase;">Max Characters</div>
+            <div id="calc-chars" style="font-size: 1.3rem; font-weight: 700; color: #fff;">~777,546 chars</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="footer-container">
+      <div class="footer-brand">
+        <div class="footer-title"><strong>StegoVault</strong></div>
+        <div class="footer-subtitle"><em>Multi-Format Steganography &amp; Secure Data Concealment System</em></div>
+        <div class="footer-tagline">Secure Communication • Hidden Information • Protected Data</div>
+      </div>
+
+      <div class="footer-nav-col">
+        <div class="footer-heading">NAVIGATION</div>
+        <div class="footer-links">
+          <a href="/" class="footer-link">Dashboard</a>
+          <span class="footer-sep">·</span>
+          <a href="/decode" class="footer-link">Extraction Terminal</a>
+        </div>
+      </div>
+
+      <div class="footer-credits">
+        <div class="footer-heading">DEVELOPED BY</div>
+        <div class="footer-author">Kaustubh Ashish Bangar</div>
+        <div class="footer-project-tag">Cybersecurity Project</div>
+      </div>
+    </div>
+
+    <div class="footer-bottom">
+      <div class="footer-copy">&copy; 2026 StegoVault. All Rights Reserved.</div>
+      <div class="footer-disclaimer">Designed for secure, authorized data concealment and recovery.</div>
+    </div>
+  </footer>
+
+  <script>
+    const calcType = document.getElementById('calc-carrier-type');
+    const widthInput = document.getElementById('calc-width');
+    const heightInput = document.getElementById('calc-height');
+    const durationInput = document.getElementById('calc-duration');
+    const groupWidth = document.getElementById('group-width');
+    const groupHeight = document.getElementById('group-height');
+    const groupDuration = document.getElementById('group-duration');
+    const btnCalc = document.getElementById('btn-calc');
+
+    function toggleCalcInputs() {
+      if (calcType.value === 'image') {
+        groupWidth.style.display = 'block';
+        groupHeight.style.display = 'block';
+        groupDuration.style.display = 'none';
+      } else {
+        groupWidth.style.display = 'none';
+        groupHeight.style.display = 'none';
+        groupDuration.style.display = 'block';
+      }
+      updateCapacity();
+    }
+
+    function updateCapacity() {
+      let elements = 0;
+      let bits = 0;
+
+      if (calcType.value === 'image') {
+        const w = parseInt(widthInput.value) || 0;
+        const h = parseInt(heightInput.value) || 0;
+        elements = w * h;
+        bits = elements * 3;
+        document.getElementById('calc-pixels').innerText = `${elements.toLocaleString()} px`;
+      } else {
+        const secs = parseFloat(durationInput.value) || 0;
+        const totalSamples = secs * 44100 * 2; // 44.1kHz stereo
+        elements = totalSamples;
+        bits = totalSamples;
+        document.getElementById('calc-pixels').innerText = `${Math.round(elements).toLocaleString()} samples`;
+      }
+
+      const totalBytes = Math.floor(bits / 8);
+      const payloadBytes = Math.max(0, totalBytes - 10);
+      const maxChars = Math.max(0, payloadBytes - 44);
+
+      document.getElementById('calc-bits').innerText = bits.toLocaleString();
+      document.getElementById('calc-bytes').innerText = `${payloadBytes.toLocaleString()} B (~${(payloadBytes / 1024).toFixed(1)} KB)`;
+      document.getElementById('calc-chars').innerText = `~${maxChars.toLocaleString()} chars`;
+    }
+
+    widthInput.addEventListener('input', updateCapacity);
+    heightInput.addEventListener('input', updateCapacity);
+    durationInput.addEventListener('input', updateCapacity);
+    btnCalc.addEventListener('click', updateCapacity);
+  </script>
+</body>
+</html>

@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Conceal Payload | StegoVault</title>
+  <meta name="description" content="Conceal encrypted secrets in Images, Audio Waveforms, PDFs, and QR Codes using AES-256-GCM and steganography.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔐</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/css/style.css">
+  <style>
+    .carrier-tabs {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0.75rem;
+      margin-bottom: 2rem;
+    }
+    .carrier-tab {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      padding: 1rem 0.75rem;
+      text-align: center;
+      cursor: pointer;
+      transition: var(--transition-fast);
+      color: var(--text-muted);
+    }
+    .carrier-tab:hover {
+      background: rgba(255, 255, 255, 0.07);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+    .carrier-tab.active {
+      background: rgba(0, 242, 254, 0.1);
+      border-color: var(--accent-cyan);
+      color: #fff;
+      box-shadow: 0 0 15px rgba(0, 242, 254, 0.2);
+    }
+    .tab-icon {
+      font-size: 1.6rem;
+      margin-bottom: 0.35rem;
+    }
+    .tab-label {
+      font-size: 0.9rem;
+      font-weight: 700;
+    }
+    .tab-sub {
+      font-size: 0.75rem;
+      color: var(--text-faint);
+      margin-top: 2px;
+    }
+    .carrier-tab.active .tab-sub {
+      color: var(--accent-cyan);
+    }
+    @media (max-width: 768px) {
+      .carrier-tabs {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Navigation Bar -->
+  <nav class="navbar" id="main-nav">
+    <a href="/" class="brand-container" id="brand-link">
+      <div class="brand-icon">🔐</div>
+      <div>
+        <div class="brand-title">StegoVault</div>
+      </div>
+      <span class="brand-badge">Encoding Station • Multi-Carrier</span>
+    </a>
+
+    <ul class="nav-links">
+      <li><a href="/" class="nav-link" id="nav-dashboard">Dashboard</a></li>
+      <li><a href="/encode" class="nav-link active" id="nav-encode">Conceal Data</a></li>
+      <li><a href="/decode" class="nav-link" id="nav-decode">Extract & Decrypt</a></li>
+    </ul>
+  </nav>
+
+  <!-- Main Content -->
+  <main class="main-content">
+    <div class="panel-container">
+
+      <!-- Alerts / Feedback -->
+      {% if error %}
+      <div class="alert alert-danger" id="alert-error">
+        <span>⚠️</span>
+        <div><strong>Encoding Failed:</strong> {{ error }}</div>
+      </div>
+      {% endif %}
+
+      {% if success and result %}
+      <div class="glass-panel" id="result-success-panel" style="border-color: rgba(16, 185, 129, 0.4);">
+        <div class="panel-header" style="border-color: rgba(16, 185, 129, 0.3);">
+          <div>
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+              <span style="font-size: 1.5rem;">✅</span>
+              <h2 class="panel-title" style="color: var(--accent-emerald);">Payload Concealed Successfully</h2>
+            </div>
+            <p class="panel-subtitle">
+              AES-256-GCM encrypted payload securely embedded into {{ result.carrier_type | upper }} carrier.
+            </p>
+          </div>
+          <div>
+            <a href="/download/{{ result.download_filename }}" class="btn btn-primary" id="btn-download-stego">
+              <span>⬇️</span> Download {{ result.download_filename.split('.')[-1] | upper }}
+            </a>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-top: 1rem;">
+          <div style="background: rgba(255,255,255,0.03); padding: 1rem; border-radius: 10px; border: 1px solid var(--border-subtle);">
+            <div style="font-size: 0.8rem; color: var(--text-faint);">CARRIER FORMAT</div>
+            <div style="font-weight: 700; color: #fff; font-size: 1.1rem; margin-top: 0.2rem;">
+              {{ result.carrier_type | upper }}
+            </div>
+          </div>
+          <div style="background: rgba(255,255,255,0.03); padding: 1rem; border-radius: 10px; border: 1px solid var(--border-subtle);">
+            <div style="font-size: 0.8rem; color: var(--text-faint);">ENCRYPTED PAYLOAD</div>
+            <div style="font-weight: 700; color: var(--accent-cyan); font-size: 1.1rem; margin-top: 0.2rem;">
+              {{ result.payload_bytes }} Bytes
+            </div>
+          </div>
+          <div style="background: rgba(255,255,255,0.03); padding: 1rem; border-radius: 10px; border: 1px solid var(--border-subtle);">
+            <div style="font-size: 0.8rem; color: var(--text-faint);">CIPHER ENGINE</div>
+            <div style="font-weight: 700; color: var(--accent-emerald); font-size: 1.1rem; margin-top: 0.2rem;">
+              AES-256-GCM + Scrypt
+            </div>
+          </div>
+          <div style="background: rgba(255,255,255,0.03); padding: 1rem; border-radius: 10px; border: 1px solid var(--border-subtle);">
+            <div style="font-size: 0.8rem; color: var(--text-faint);">SECURITY OVERHEAD</div>
+            <div style="font-weight: 700; color: #fff; font-size: 1.1rem; margin-top: 0.2rem;">
+              44 Bytes (Salt/IV/Tag)
+            </div>
+          </div>
+        </div>
+
+        <!-- Carrier Specific Preview -->
+        <div style="margin-top: 1.5rem; text-align: center;">
+          {% if result.carrier_type == 'image' or result.carrier_type == 'qr' %}
+          <img src="/download/{{ result.download_filename }}" alt="Stego Preview" style="max-height: 240px; border-radius: 10px; border: 1px solid var(--border-subtle); box-shadow: var(--shadow-sm); background: #fff; padding: 6px;">
+          <div style="color: var(--text-faint); font-size: 0.8rem; margin-top: 0.5rem;">Visual carrier is fully intact and ready for transmission.</div>
+          {% elif result.carrier_type == 'audio' %}
+          <div style="background: rgba(255,255,255,0.02); padding: 1.5rem; border-radius: 12px; border: 1px solid var(--border-subtle);">
+            <div style="margin-bottom: 0.75rem; font-weight: 600; color: var(--accent-cyan);">🎵 Steganographic Audio Player</div>
+            <audio controls src="/download/{{ result.download_filename }}" style="width: 100%; max-width: 500px;"></audio>
+            <div style="color: var(--text-faint); font-size: 0.8rem; margin-top: 0.5rem;">Acoustic signal exhibits no audible noise or distortion.</div>
+          </div>
+          {% elif result.carrier_type == 'pdf' %}
+          <div style="background: rgba(255,255,255,0.02); padding: 1.5rem; border-radius: 12px; border: 1px solid var(--border-subtle); display: inline-flex; align-items: center; gap: 1rem;">
+            <span style="font-size: 2.5rem;">📄</span>
+            <div style="text-align: left;">
+              <div style="font-weight: 700; color: #fff;">{{ result.download_filename }}</div>
+              <div style="color: var(--text-muted); font-size: 0.85rem;">Concealed via dual-layer catalog dictionary + attachment stream</div>
+            </div>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- Encoding Form Panel -->
+      <div class="glass-panel" id="encode-panel">
+        <div class="panel-header">
+          <div>
+            <h1 class="panel-title"><span>🔒</span> Conceal Secret Payload</h1>
+            <p class="panel-subtitle">Encrypt sensitive information and embed into your chosen digital carrier.</p>
+          </div>
+        </div>
+
+        <form action="/encode" method="POST" enctype="multipart/form-data" id="encode-form">
+          <input type="hidden" name="carrier_type" id="carrier_type_input" value="image">
+
+          <!-- Multi-Carrier Format Selector -->
+          <label class="form-label"><span>Select Carrier Architecture</span></label>
+          <div class="carrier-tabs" id="carrier-tabs">
+            <div class="carrier-tab active" data-type="image" onclick="selectCarrier('image')">
+              <div class="tab-icon">🖼️</div>
+              <div class="tab-label">Image</div>
+              <div class="tab-sub">LSB Pixel Bitstream</div>
+            </div>
+            <div class="carrier-tab" data-type="audio" onclick="selectCarrier('audio')">
+              <div class="tab-icon">🎵</div>
+              <div class="tab-label">Audio</div>
+              <div class="tab-sub">16-bit PCM Waveform</div>
+            </div>
+            <div class="carrier-tab" data-type="pdf" onclick="selectCarrier('pdf')">
+              <div class="tab-icon">📄</div>
+              <div class="tab-label">PDF Document</div>
+              <div class="tab-sub">Stream &amp; Metadata</div>
+            </div>
+            <div class="carrier-tab" data-type="qr" onclick="selectCarrier('qr')">
+              <div class="tab-icon">📱</div>
+              <div class="tab-label">Secure QR</div>
+              <div class="tab-sub">Direct Scannable Matrix</div>
+            </div>
+          </div>
+
+          <!-- Carrier Upload Dropzone (for Image, Audio, PDF) -->
+          <div class="form-group" id="carrier-file-group">
+            <label class="form-label" id="carrier-file-label">
+              <span id="carrier-file-text">Cover Carrier Image</span>
+              <span class="hint" id="carrier-file-hint">Supports PNG, JPG, BMP</span>
+            </label>
+
+            <div class="upload-dropzone" id="dropzone" onclick="document.getElementById('carrier_file').click();">
+              <div class="dropzone-icon" id="dropzone-icon">📁</div>
+              <div class="dropzone-title" id="dropzone-title">Click to browse or drop cover file here</div>
+              <div class="dropzone-subtitle" id="dropzone-subtitle">Select an innocent cover file to act as the concealment host</div>
+            </div>
+
+            <input type="file" id="carrier_file" name="carrier_file" class="file-input-hidden">
+
+            <!-- Live File Preview -->
+            <div class="preview-card" id="preview-card">
+              <div id="preview-icon" style="font-size: 2rem;">🖼️</div>
+              <img id="image-preview" class="preview-thumbnail" alt="Preview" style="display: none;">
+              <div class="preview-details">
+                <div class="preview-name" id="preview-filename">carrier_file</div>
+                <div class="preview-meta" id="preview-meta">Ready to process</div>
+              </div>
+            </div>
+
+            <!-- Capacity Meter Box -->
+            <div class="capacity-meter-box" id="capacity-meter">
+              <div class="capacity-header">
+                <span class="capacity-title"><span>⚡</span> Carrier Capacity</span>
+                <span class="capacity-stats" id="capacity-stats-text">0 / 0 Bytes</span>
+              </div>
+              <div class="progress-bar-bg">
+                <div class="progress-bar-fill" id="capacity-bar-fill"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- QR Info Notice (shown only when QR is selected) -->
+          <div id="qr-info-box" style="display: none; background: rgba(0, 242, 254, 0.05); border: 1px solid rgba(0, 242, 254, 0.2); padding: 1.25rem; border-radius: 12px; margin-bottom: 1.5rem;">
+            <div style="display: flex; align-items: center; gap: 0.75rem;">
+              <span style="font-size: 1.5rem;">📱</span>
+              <div>
+                <div style="font-weight: 700; color: #fff;">Zero-Carrier Direct Generation</div>
+                <div style="color: var(--text-muted); font-size: 0.85rem;">
+                  No cover file needed. StegoVault will encrypt your secret and generate a high-density, scannable QR code envelope with computer vision recognition.
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Secret Message Input -->
+          <div class="form-group">
+            <label class="form-label" for="secret_message">
+              <span>Confidential Secret Message</span>
+              <span class="hint" id="char-counter">0 characters</span>
+            </label>
+            <textarea id="secret_message" name="secret_message" class="form-textarea" placeholder="Enter sensitive intelligence, keys, credentials, or private communications..." required></textarea>
+          </div>
+
+          <!-- Encryption Password -->
+          <div class="form-group">
+            <label class="form-label" for="password">
+              <span>Encryption Passphrase</span>
+              <span class="hint">Scrypt KDF will derive a 256-bit AES key</span>
+            </label>
+            <div class="password-wrapper">
+              <input type="password" id="password" name="password" class="form-input" placeholder="Enter strong secret key passphrase..." required autocomplete="off">
+              <button type="button" class="password-toggle" id="toggle-password" title="Show/Hide Passphrase">👁️</button>
+            </div>
+          </div>
+
+          <!-- Action Button -->
+          <button type="submit" class="btn btn-primary" id="btn-submit-encode" style="width: 100%; padding: 1rem;">
+            <span>🛡️</span> Encrypt & Conceal Payload
+          </button>
+        </form>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="footer-container">
+      <div class="footer-brand">
+        <div class="footer-title"><strong>StegoVault</strong></div>
+        <div class="footer-subtitle"><em>Multi-Format Steganography &amp; Secure Data Concealment System</em></div>
+        <div class="footer-tagline">Secure Communication • Hidden Information • Protected Data</div>
+      </div>
+
+      <div class="footer-nav-col">
+        <div class="footer-heading">NAVIGATION</div>
+        <div class="footer-links">
+          <a href="/" class="footer-link">Dashboard</a>
+          <span class="footer-sep">·</span>
+          <a href="/decode" class="footer-link">Extraction Terminal</a>
+        </div>
+      </div>
+
+      <div class="footer-credits">
+        <div class="footer-heading">DEVELOPED BY</div>
+        <div class="footer-author">Kaustubh Ashish Bangar</div>
+        <div class="footer-project-tag">Cybersecurity Project</div>
+      </div>
+    </div>
+
+    <div class="footer-bottom">
+      <div class="footer-copy">&copy; 2026 StegoVault. All Rights Reserved.</div>
+      <div class="footer-disclaimer">Designed for secure, authorized data concealment and recovery.</div>
+    </div>
+  </footer>
+
+  <script>
+    let currentCarrier = 'image';
+    let availableBytes = 0;
+
+    const fileInput = document.getElementById('carrier_file');
+    const carrierTypeInput = document.getElementById('carrier_type_input');
+    const carrierFileGroup = document.getElementById('carrier-file-group');
+    const qrInfoBox = document.getElementById('qr-info-box');
+    const dropzone = document.getElementById('dropzone');
+    const previewCard = document.getElementById('preview-card');
+    const previewImg = document.getElementById('image-preview');
+    const previewIcon = document.getElementById('preview-icon');
+    const previewFilename = document.getElementById('preview-filename');
+    const previewMeta = document.getElementById('preview-meta');
+    const capacityMeter = document.getElementById('capacity-meter');
+    const capacityStatsText = document.getElementById('capacity-stats-text');
+    const capacityBarFill = document.getElementById('capacity-bar-fill');
+    const messageInput = document.getElementById('secret_message');
+    const charCounter = document.getElementById('char-counter');
+    const togglePassword = document.getElementById('toggle-password');
+    const passwordInput = document.getElementById('password');
+
+    function selectCarrier(type) {
+      currentCarrier = type;
+      carrierTypeInput.value = type;
+
+      document.querySelectorAll('.carrier-tab').forEach(tab => {
+        tab.classList.toggle('active', tab.getAttribute('data-type') === type);
+      });
+
+      const labelText = document.getElementById('carrier-file-text');
+      const labelHint = document.getElementById('carrier-file-hint');
+      const dropzoneTitle = document.getElementById('dropzone-title');
+      const dropzoneIcon = document.getElementById('dropzone-icon');
+
+      if (type === 'image') {
+        carrierFileGroup.style.display = 'block';
+        qrInfoBox.style.display = 'none';
+        fileInput.accept = 'image/png, image/jpeg, image/bmp';
+        fileInput.required = true;
+        labelText.innerText = 'Cover Carrier Image';
+        labelHint.innerText = 'Supports PNG, JPG, BMP';
+        dropzoneTitle.innerText = 'Click to browse or drop cover image here';
+        dropzoneIcon.innerText = '🖼️';
+      } else if (type === 'audio') {
+        carrierFileGroup.style.display = 'block';
+        qrInfoBox.style.display = 'none';
+        fileInput.accept = 'audio/wav, audio/flac';
+        fileInput.required = true;
+        labelText.innerText = 'Cover Audio Waveform';
+        labelHint.innerText = 'Supports lossless WAV, FLAC (16-bit PCM)';
+        dropzoneTitle.innerText = 'Click to browse or drop audio waveform here';
+        dropzoneIcon.innerText = '🎵';
+      } else if (type === 'pdf') {
+        carrierFileGroup.style.display = 'block';
+        qrInfoBox.style.display = 'none';
+        fileInput.accept = 'application/pdf';
+        fileInput.required = false; // Optional
+        labelText.innerText = 'Cover PDF Document (Optional)';
+        labelHint.innerText = 'Leave empty to generate a clean executive carrier';
+        dropzoneTitle.innerText = 'Optional: Click to select existing PDF cover or leave blank';
+        dropzoneIcon.innerText = '📄';
+      } else if (type === 'qr') {
+        carrierFileGroup.style.display = 'none';
+        qrInfoBox.style.display = 'block';
+        fileInput.required = false;
+      }
+
+      previewCard.style.display = 'none';
+      capacityMeter.style.display = 'none';
+      availableBytes = 0;
+      updateMeter();
+    }
+
+    // Drag & Drop
+    ['dragenter', 'dragover'].forEach(name => {
+      dropzone.addEventListener(name, (e) => {
+        e.preventDefault();
+        dropzone.classList.add('dragover');
+      });
+    });
+
+    ['dragleave', 'drop'].forEach(name => {
+      dropzone.addEventListener(name, (e) => {
+        e.preventDefault();
+        dropzone.classList.remove('dragover');
+      });
+    });
+
+    dropzone.addEventListener('drop', (e) => {
+      if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+        fileInput.files = e.dataTransfer.files;
+        handleFileSelect(e.dataTransfer.files[0]);
+      }
+    });
+
+    fileInput.addEventListener('change', () => {
+      if (fileInput.files && fileInput.files[0]) {
+        handleFileSelect(fileInput.files[0]);
+      }
+    });
+
+    function handleFileSelect(file) {
+      previewFilename.innerText = file.name;
+      previewCard.style.display = 'flex';
+
+      if (currentCarrier === 'image') {
+        previewIcon.style.display = 'none';
+        previewImg.style.display = 'block';
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          previewImg.src = e.target.result;
+          const img = new Image();
+          img.onload = () => {
+            const w = img.naturalWidth;
+            const h = img.naturalHeight;
+            availableBytes = Math.floor((w * h * 3) / 8) - 10;
+            previewMeta.innerText = `${w} × ${h} px • ${(file.size / 1024).toFixed(1)} KB`;
+            capacityMeter.style.display = 'block';
+            updateMeter();
+          };
+          img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+      } else if (currentCarrier === 'audio') {
+        previewImg.style.display = 'none';
+        previewIcon.style.display = 'block';
+        previewIcon.innerText = '🎵';
+        previewMeta.innerText = `Audio file • ${(file.size / 1024).toFixed(1)} KB`;
+        // Audio capacity estimate based on file size: 1 sample = 2 bytes in 16-bit PCM, 1 bit per sample
+        availableBytes = Math.max(0, Math.floor((file.size / 2) / 8) - 10);
+        capacityMeter.style.display = 'block';
+        updateMeter();
+      } else if (currentCarrier === 'pdf') {
+        previewImg.style.display = 'none';
+        previewIcon.style.display = 'block';
+        previewIcon.innerText = '📄';
+        previewMeta.innerText = `PDF Document • ${(file.size / 1024).toFixed(1)} KB`;
+        availableBytes = 10 * 1024 * 1024; // 10MB capacity
+        capacityMeter.style.display = 'none';
+        updateMeter();
+      }
+    }
+
+    function updateMeter() {
+      const msgLen = new Blob([messageInput.value]).size;
+      const cryptoEstimated = msgLen > 0 ? msgLen + 44 : 0;
+      charCounter.innerText = `${messageInput.value.length} chars (~${cryptoEstimated} B encrypted)`;
+
+      if (availableBytes > 0 && currentCarrier !== 'pdf' && currentCarrier !== 'qr') {
+        const pct = Math.min(100, (cryptoEstimated / availableBytes) * 100);
+        capacityBarFill.style.width = `${pct}%`;
+        capacityStatsText.innerText = `${cryptoEstimated.toLocaleString()} / ${availableBytes.toLocaleString()} Bytes (${pct.toFixed(2)}%)`;
+        capacityBarFill.style.background = cryptoEstimated > availableBytes ? 'var(--accent-crimson)' : 'var(--gradient-cyber)';
+      }
+    }
+
+    messageInput.addEventListener('input', updateMeter);
+
+    togglePassword.addEventListener('click', () => {
+      const isPass = passwordInput.getAttribute('type') === 'password';
+      passwordInput.setAttribute('type', isPass ? 'text' : 'password');
+      togglePassword.innerText = isPass ? '🔒' : '👁️';
+    });
+  </script>
+</body>
+</html>
