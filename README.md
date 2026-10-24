@@ -113,18 +113,22 @@ flowchart TD
 
 ### 1. Main Dashboard & Hero Interface
 ![StegoVault Dashboard Hero](docs/dashboard_hero.png)
+
 *Figure 1: StegoVault Main Dashboard featuring the stealth dark-mode design system, live status indicators, and primary action controls.*
 
 ### 2. Multi-Carrier Feature Suite & Real-Time Capacity Calculator
 ![StegoVault Features & Capacity Calculator](docs/dashboard_features.png)
+
 *Figure 2: Carrier architecture overview and interactive bitwise mathematical capacity calculator evaluating payload limits.*
 
 ### 3. Multi-Carrier Concealment Station (`/encode`)
 ![StegoVault Concealment Station](docs/conceal_terminal.png)
+
 *Figure 3: Data concealment station with tabbed carrier selection (Image LSB, 16-bit PCM Audio, PDF Stream, and Secure QR Code).*
 
 ### 4. Universal Extraction Terminal & Security Audit (`/decode`)
 ![StegoVault Extraction Terminal](docs/extract_terminal.png)
+
 *Figure 4: Universal extraction and decryption terminal with automated carrier format detection and cryptographic audit verification.*
 
 ---
