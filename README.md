@@ -231,6 +231,13 @@ Run the full 20-test automated verification suite:
 python -m pytest tests/ -v
 ```
 
+### 6. Deploy to Vercel (Live Cloud URL)
+StegoVault is configured for one-click deployment on [Vercel](https://vercel.com):
+1. Push this repository to your GitHub account.
+2. Visit [vercel.com/new](https://vercel.com/new) and log in with GitHub.
+3. Import `StegoVault-Multi-Format-Steganography` and click **Deploy**.
+4. Vercel automatically detects the Python runtime (`api/index.py` & `vercel.json`) and gives you a free, public link (e.g. `https://stegovault.vercel.app`) accessible worldwide.
+
 ---
 
 ## Results & Conclusion

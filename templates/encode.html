@@ -103,10 +103,19 @@
               AES-256-GCM encrypted payload securely embedded into {{ result.carrier_type | upper }} carrier.
             </p>
           </div>
-          <div>
+          <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+            {% if result.b64_data %}
+            <a href="data:{{ result.mime_type }};base64,{{ result.b64_data }}" download="{{ result.download_filename }}" class="btn btn-primary" id="btn-download-stego">
+              <span>⬇️</span> Download {{ result.download_filename.split('.')[-1] | upper }}
+            </a>
+            <a href="/download/{{ result.download_filename }}" class="btn btn-secondary" id="btn-download-direct" style="padding: 0.6rem 0.9rem; font-size: 0.85rem;" title="Direct Server Link">
+              <span>🔗</span> Link
+            </a>
+            {% else %}
             <a href="/download/{{ result.download_filename }}" class="btn btn-primary" id="btn-download-stego">
               <span>⬇️</span> Download {{ result.download_filename.split('.')[-1] | upper }}
             </a>
+            {% endif %}
           </div>
         </div>
 
@@ -140,12 +149,12 @@
         <!-- Carrier Specific Preview -->
         <div style="margin-top: 1.5rem; text-align: center;">
           {% if result.carrier_type == 'image' or result.carrier_type == 'qr' %}
-          <img src="/download/{{ result.download_filename }}" alt="Stego Preview" style="max-height: 240px; border-radius: 10px; border: 1px solid var(--border-subtle); box-shadow: var(--shadow-sm); background: #fff; padding: 6px;">
+          <img src="{% if result.b64_data %}data:{{ result.mime_type }};base64,{{ result.b64_data }}{% else %}/download/{{ result.download_filename }}{% endif %}" alt="Stego Preview" style="max-height: 240px; border-radius: 10px; border: 1px solid var(--border-subtle); box-shadow: var(--shadow-sm); background: #fff; padding: 6px;">
           <div style="color: var(--text-faint); font-size: 0.8rem; margin-top: 0.5rem;">Visual carrier is fully intact and ready for transmission.</div>
           {% elif result.carrier_type == 'audio' %}
           <div style="background: rgba(255,255,255,0.02); padding: 1.5rem; border-radius: 12px; border: 1px solid var(--border-subtle);">
             <div style="margin-bottom: 0.75rem; font-weight: 600; color: var(--accent-cyan);">🎵 Steganographic Audio Player</div>
-            <audio controls src="/download/{{ result.download_filename }}" style="width: 100%; max-width: 500px;"></audio>
+            <audio controls src="{% if result.b64_data %}data:{{ result.mime_type }};base64,{{ result.b64_data }}{% else %}/download/{{ result.download_filename }}{% endif %}" style="width: 100%; max-width: 500px;"></audio>
             <div style="color: var(--text-faint); font-size: 0.8rem; margin-top: 0.5rem;">Acoustic signal exhibits no audible noise or distortion.</div>
           </div>
           {% elif result.carrier_type == 'pdf' %}

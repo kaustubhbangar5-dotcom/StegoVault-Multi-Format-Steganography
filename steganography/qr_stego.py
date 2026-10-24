@@ -7,7 +7,10 @@ import os
 import base64
 from typing import Dict, Any
 import qrcode
-import cv2
+try:
+    import cv2
+except ImportError:
+    cv2 = None
 import numpy as np
 
 QR_PREFIX = "STEGOQR:"
@@ -101,16 +104,19 @@ def decode_qr(qr_image_path: str) -> bytes:
 
         # Strategy 2: OpenCV Computer Vision fallback
         if not data:
-            with Image.open(qr_image_path) as pil_img:
-                img = cv2.cvtColor(np.array(pil_img.convert("RGB")), cv2.COLOR_RGB2BGR)
+            if cv2 is not None:
+                with Image.open(qr_image_path) as pil_img:
+                    img = cv2.cvtColor(np.array(pil_img.convert("RGB")), cv2.COLOR_RGB2BGR)
 
-            detector = cv2.QRCodeDetector()
-            data, _, _ = detector.detectAndDecode(img)
+                detector = cv2.QRCodeDetector()
+                data, _, _ = detector.detectAndDecode(img)
 
-            if not data:
-                gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-                _, thresh = cv2.threshold(gray, 128, 255, cv2.THRESH_BINARY)
-                data, _, _ = detector.detectAndDecode(thresh)
+                if not data:
+                    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+                    _, thresh = cv2.threshold(gray, 128, 255, cv2.THRESH_BINARY)
+                    data, _, _ = detector.detectAndDecode(thresh)
+            else:
+                raise QrStegoError("QR decoding engine unavailable (requires opencv-python-headless or pyzbar).")
 
         if not data:
             raise QrStegoError("No valid QR code symbol detected in image.")

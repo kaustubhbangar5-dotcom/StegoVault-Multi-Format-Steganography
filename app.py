@@ -7,6 +7,7 @@ Supported Carriers: Images (LSB), Audio Waveforms (PCM LSB), PDF Documents, and 
 import os
 import uuid
 import time
+import base64
 from typing import Optional
 from flask import Flask, render_template, request, send_from_directory, jsonify
 from werkzeug.utils import secure_filename
@@ -36,7 +37,11 @@ app = Flask(__name__)
 app.secret_key = os.urandom(24)
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-OUTPUT_DIR = os.path.join(BASE_DIR, "outputs")
+# On serverless platforms (Vercel, AWS Lambda), write to ephemeral /tmp directory
+if os.environ.get("VERCEL") or os.environ.get("AWS_LAMBDA_FUNCTION_NAME"):
+    OUTPUT_DIR = "/tmp/outputs"
+else:
+    OUTPUT_DIR = os.path.join(BASE_DIR, "outputs")
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 ALLOWED_IMAGE_EXTS = {"png", "jpg", "jpeg", "bmp"}
@@ -143,12 +148,33 @@ def encode_route():
         # Step 3: Cryptographic Audit Envelope
         security_audit = analyze_security_envelope(encrypted_payload)
 
+        # Read generated stego file bytes for stateless client-side download & preview
+        b64_file_data = ""
+        mime_type = "application/octet-stream"
+        if os.path.exists(output_path):
+            with open(output_path, "rb") as f_out:
+                b64_file_data = base64.b64encode(f_out.read()).decode("ascii")
+
+            mime_map = {
+                "png": "image/png",
+                "jpg": "image/jpeg",
+                "jpeg": "image/jpeg",
+                "bmp": "image/bmp",
+                "wav": "audio/wav",
+                "flac": "audio/flac",
+                "pdf": "application/pdf",
+            }
+            ext = output_filename.rsplit(".", 1)[-1].lower() if "." in output_filename else "bin"
+            mime_type = mime_map.get(ext, "application/octet-stream")
+
         result_payload = {
             "carrier_type": carrier_type,
             "download_filename": output_filename,
             "payload_bytes": len(encrypted_payload),
             "stats": encode_stats,
             "security_audit": security_audit,
+            "b64_data": b64_file_data,
+            "mime_type": mime_type,
         }
 
         return render_template("encode.html", success=True, result=result_payload)

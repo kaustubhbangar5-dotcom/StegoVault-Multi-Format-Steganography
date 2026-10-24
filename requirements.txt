@@ -12,6 +12,7 @@ numpy>=1.24.0
 soundfile>=0.12.1
 pypdf>=4.0.0
 qrcode[pil]>=7.4.2
+opencv-python-headless>=4.8.0
 
 # Testing & Quality Assurance
 pytest>=8.0.0
